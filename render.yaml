@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: msg91-render-test
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MSG91_AUTHKEY
+        sync: false
+      - key: MSG91_WIDGET_ID
+        sync: false
+      - key: TEST_API_KEY
+        generateValue: true

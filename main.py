@@ -76,3 +76,64 @@ def test_otp(
 
     except httpx.RequestError:
         raise HTTPException(502, "Network request to MSG91 failed")
+
+@app.post("/test-otp-gateway")
+def test_otp_gateway(
+    payload: OTPRequest,
+    x_test_key: str | None = Header(default=None),
+):
+    test_key = os.getenv("TEST_API_KEY", "")
+    if not test_key or x_test_key != test_key:
+        raise HTTPException(403, "Unauthorized")
+
+    mobile = payload.mobile.strip()
+
+    if not re.fullmatch(r"[6-9][0-9]{9}", mobile):
+        raise HTTPException(400, "Enter a valid Indian mobile number")
+
+    gateway_url = os.getenv("MSG91_GATEWAY_URL", "").strip().rstrip("/")
+    gateway_key = os.getenv("MSG91_GATEWAY_KEY", "").strip()
+
+    if not gateway_url or not gateway_key:
+        raise HTTPException(503, "Gateway configuration missing")
+
+    try:
+        response = httpx.post(
+            gateway_url + "/test-otp",
+            headers={
+                "x-gateway-key": gateway_key,
+                "Content-Type": "application/json",
+            },
+            json={
+                "mobile": mobile,
+            },
+            timeout=20.0,
+            follow_redirects=False,
+        )
+
+        try:
+            result = response.json()
+        except ValueError:
+            result = {}
+
+        return {
+            "gateway_http_status": response.status_code,
+            "msg91_http_status": (
+                result.get("http_status")
+                if isinstance(result, dict)
+                else None
+            ),
+            "provider_type": (
+                result.get("provider_type")
+                if isinstance(result, dict)
+                else None
+            ),
+            "provider_message": (
+                result.get("provider_message")
+                if isinstance(result, dict)
+                else "Invalid gateway response"
+            ),
+        }
+
+    except httpx.RequestError:
+        raise HTTPException(502, "Network request to gateway failed")

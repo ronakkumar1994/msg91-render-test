@@ -118,16 +118,31 @@ def test_otp_gateway(
 
         return {
             "gateway_http_status": response.status_code,
+
             "msg91_http_status": (
                 result.get("http_status")
                 if isinstance(result, dict)
                 else None
             ),
+
+            "caller_country": (
+                result.get("caller_country")
+                if isinstance(result, dict)
+                else None
+            ),
+
+            "caller_colo": (
+                result.get("caller_colo")
+                if isinstance(result, dict)
+                else None
+            ),
+
             "provider_type": (
                 result.get("provider_type")
                 if isinstance(result, dict)
                 else None
             ),
+
             "provider_message": (
                 result.get("provider_message")
                 if isinstance(result, dict)
